@@ -1,4 +1,4 @@
-(defproject conductor "0.1.0-SNAPSHOT"
+(defproject conductor "0.1.0"
   :description "Automatic instrumentation for clojure.spec"
   :url "https://github.com/rads/conductor"
   :license {:name "MIT License"
