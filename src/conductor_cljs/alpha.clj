@@ -42,10 +42,10 @@
      instrumented#))
 
 (defmacro unstrument []
-  `(when @enable
+  `(when @enabled
      (cljs.spec.alpha/check-asserts @original-assert)
      (set! cljs.spec.alpha/*explain-out* @original-explain)
      (cljs.test/update-current-env! [:formatter] (constantly @original-formatter))
-     (~(symbol test-ns "instrument"))
+     (~(symbol test-ns "unstrument"))
      (reset! enabled false)
      nil))
