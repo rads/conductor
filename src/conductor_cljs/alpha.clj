@@ -5,19 +5,10 @@
   (or (System/getProperty "conductor.cljs-test-ns")
       "orchestra-cljs.spec.test"))
 
-(def printer-fn-impl
+(def printer-fn
   (let [printer (some-> (System/getProperty "conductor.printer-fn")
                         (edn/read-string))]
     (or printer 'expound.alpha/printer)))
-
-(defmacro printer-fn []
-  printer-fn-impl)
-
-(defmacro instrument []
-  `(~(symbol test-ns "instrument")))
-
-(defmacro unstrument []
-  `(~(symbol test-ns "unstrument")))
 
 (defmacro fixture [sym-or-syms]
   `(let [original-explain# (atom nil)
@@ -27,7 +18,7 @@
       #(let [formatter# conductor-cljs.alpha/test-formatter]
          (reset! original-explain# cljs.spec.alpha/*explain-out*)
          (cljs.spec.alpha/check-asserts true)
-         (set! cljs.spec.alpha/*explain-out* ~printer-fn-impl)
+         (set! cljs.spec.alpha/*explain-out* ~printer-fn)
          (cljs.test/update-current-env! [:formatter] (constantly formatter#))
          (~(symbol test-ns "instrument") ~sym-or-syms))
 
@@ -37,3 +28,24 @@
          (cljs.spec.alpha/check-asserts original-assert#)
          (set! cljs.spec.alpha/*explain-out* @original-explain#)
          (cljs.test/update-current-env! [:formatter] (constantly original-formatter#)))}))
+
+(defmacro instrument []
+  `(let [instrumented# (~(symbol test-ns "instrument"))]
+     (when-not @enabled
+       (reset! original-formatter (:formatter (cljs.test/get-current-env)))
+       (reset! original-assert (cljs.spec.alpha/check-asserts?))
+       (reset! original-explain cljs.spec.alpha/*explain-out*)
+       (cljs.spec.alpha/check-asserts true)
+       (set! cljs.spec.alpha/*explain-out* ~printer-fn)
+       (cljs.test/update-current-env! [:formatter] (constantly test-formatter))
+       (reset! enabled true))
+     instrumented#))
+
+(defmacro unstrument []
+  `(when @enable
+     (cljs.spec.alpha/check-asserts @original-assert)
+     (set! cljs.spec.alpha/*explain-out* @original-explain)
+     (cljs.test/update-current-env! [:formatter] (constantly @original-formatter))
+     (~(symbol test-ns "instrument"))
+     (reset! enabled false)
+     nil))
