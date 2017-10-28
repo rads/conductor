@@ -17,15 +17,16 @@
     v))
 
 (defn- start-instrument []
-  (instrument)
-  (when-not @enabled
-    (reset! original-formatter (:formatter (test/get-current-env)))
-    (reset! original-assert (s/check-asserts?))
-    (reset! original-explain s/*explain-out*)
-    (s/check-asserts true)
-    (set! s/*explain-out* (printer-fn))
-    (test/update-current-env! [:formatter] (constantly test-formatter))
-    (reset! enabled true)))
+  (let [instrumented (instrument)]
+    (when-not @enabled
+      (reset! original-formatter (:formatter (test/get-current-env)))
+      (reset! original-assert (s/check-asserts?))
+      (reset! original-explain s/*explain-out*)
+      (s/check-asserts true)
+      (set! s/*explain-out* (printer-fn))
+      (test/update-current-env! [:formatter] (constantly test-formatter))
+      (reset! enabled true))
+    instrumented))
 
 (defn- stop-instrument []
   (when @enabled
@@ -39,5 +40,4 @@
 (defn auto-instrument [flag]
   (if flag
     (start-instrument)
-    (stop-instrument))
-  nil)
+    (stop-instrument)))
