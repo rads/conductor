@@ -35,10 +35,12 @@
       (Thread/sleep 1000)
       (recur))))
 
-(defn start-instrument []
-  (when-not @auto-instrument-running
-    (reset! auto-instrument-running true)
-    (instrument-loop)))
+(defmacro start-instrument []
+  `(when-not @auto-instrument-running
+     (s/check-asserts true)
+     (alter-var-root #'s/*explain-out* (constantly ~printer-fn-impl))
+     (reset! auto-instrument-running true)
+     (instrument-loop)))
 
 (defn stop-instrument []
   (when @auto-instrument-running
